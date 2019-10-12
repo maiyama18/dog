@@ -15,8 +15,15 @@ const (
 	INT   = "INT"
 
 	// operators
-	ASSIGN = "="
-	PLUS   = "+"
+	ASSIGN   = "="
+	PLUS     = "+"
+	MINUS    = "-"
+	ASTERISK = "*"
+	SLASH    = "/"
+	BANG     = "!"
+
+	LT = "<"
+	GT = ">"
 
 	// delimiters
 	COMMA     = ","
@@ -30,6 +37,11 @@ const (
 	// keywords
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
+	IF       = "IF"
+	ELSE     = "ELSE"
+	RETURN   = "RETURN"
+	TRUE     = "TRUE"
+	FALSE    = "FALSE"
 )
 
 func TypeFromLiteral(literal string) Type {
@@ -38,6 +50,16 @@ func TypeFromLiteral(literal string) Type {
 		return FUNCTION
 	case "let":
 		return LET
+	case "if":
+		return IF
+	case "else":
+		return ELSE
+	case "return":
+		return RETURN
+	case "true":
+		return TRUE
+	case "false":
+		return FALSE
 	default:
 		return IDENT
 	}
