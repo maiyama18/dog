@@ -13,7 +13,7 @@ type Lexer struct {
 	currentRune  rune
 }
 
-func New(input string) *Lexer {
+func NewLexer(input string) *Lexer {
 	l := &Lexer{input: []rune(input)}
 	l.consumeRune()
 	return l

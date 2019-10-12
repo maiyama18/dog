@@ -98,7 +98,7 @@ if (5 < 10) {
 		{Type: token.SEMICOLON, Literal: ";"},
 	}
 
-	l := New(input)
+	l := NewLexer(input)
 
 	for i, expected := range expectedTokens {
 		actual := l.NextToken()

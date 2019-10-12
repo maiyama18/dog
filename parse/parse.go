@@ -12,7 +12,7 @@ type Parser struct {
 	nextToken    token.Token
 }
 
-func New(lexer *lex.Lexer) *Parser {
+func NewParser(lexer *lex.Lexer) *Parser {
 	p := &Parser{lexer: lexer}
 
 	p.consumeToken()
