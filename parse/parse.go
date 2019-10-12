@@ -47,6 +47,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.currentToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
+	case token.RETURN:
+		return p.parseReturnStatement()
 	default:
 		return nil
 	}
@@ -72,6 +74,17 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	}
 
 	return &ast.LetStatement{Token: tok, Identifier: ident}
+}
+
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	tok := p.currentToken
+
+	// TODO: parse expression
+	for !p.isCurrentTokenType(token.SEMICOLON) {
+		p.consumeToken()
+	}
+
+	return &ast.ReturnStatement{Token: tok}
 }
 
 func (p *Parser) consumeToken() {
