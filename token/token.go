@@ -31,3 +31,14 @@ const (
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 )
+
+func TypeFromLiteral(literal string) Type {
+	switch literal {
+	case "fn":
+		return FUNCTION
+	case "let":
+		return LET
+	default:
+		return IDENT
+	}
+}

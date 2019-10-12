@@ -1,6 +1,10 @@
 package lexer
 
-import "github.com/maiyama18/dog/token"
+import (
+	"unicode"
+
+	"github.com/maiyama18/dog/token"
+)
 
 type Lexer struct {
 	input        []rune
@@ -17,6 +21,8 @@ func New(input string) *Lexer {
 
 func (l *Lexer) NextToken() token.Token {
 	var t token.Token
+
+	l.skipSpaces()
 
 	switch l.currentRune {
 	case '=':
@@ -37,6 +43,15 @@ func (l *Lexer) NextToken() token.Token {
 		t = newToken(token.SEMICOLON, l.currentRune)
 	case 0:
 		t = newToken(token.EOF, ' ')
+	default:
+		if isLetter(l.currentRune) {
+			literal := l.readIdentifier()
+			tokenType := token.TypeFromLiteral(literal)
+			t = token.Token{Type: tokenType, Literal: literal}
+		} else if isDigit(l.currentRune) {
+			literal := l.readNumber()
+			t = token.Token{Type: token.INT, Literal: literal}
+		}
 	}
 
 	l.consumeRune()
@@ -53,6 +68,43 @@ func (l *Lexer) consumeRune() {
 	l.nextPosition++
 }
 
+func (l *Lexer) peekRune() rune {
+	if l.nextPosition >= len(l.input) {
+		return 0
+	}
+	return l.input[l.nextPosition]
+}
+
+func (l *Lexer) readIdentifier() string {
+	start := l.position
+	for isLetter(l.peekRune()) {
+		l.consumeRune()
+	}
+	return string(l.input[start : l.position+1])
+}
+
+func (l *Lexer) readNumber() string {
+	start := l.position
+	for isDigit(l.peekRune()) {
+		l.consumeRune()
+	}
+	return string(l.input[start : l.position+1])
+}
+
+func (l *Lexer) skipSpaces() {
+	for unicode.IsSpace(l.currentRune) {
+		l.consumeRune()
+	}
+}
+
 func newToken(tokenType token.Type, literal rune) token.Token {
 	return token.Token{Type: tokenType, Literal: string(literal)}
+}
+
+func isLetter(r rune) bool {
+	return r == '_' || unicode.IsLetter(r)
+}
+
+func isDigit(r rune) bool {
+	return unicode.IsDigit(r)
 }
