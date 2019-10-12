@@ -22,6 +22,9 @@ if (5 < 10) {
 } else {
 	return false;
 }
+
+10 == 10;
+10 != 9;
 `
 
 	expectedTokens := []token.Token{
@@ -85,6 +88,14 @@ if (5 < 10) {
 		{Type: token.FALSE, Literal: "false"},
 		{Type: token.SEMICOLON, Literal: ";"},
 		{Type: token.RBRACE, Literal: "}"},
+		{Type: token.INT, Literal: "10"},
+		{Type: token.EQ, Literal: "=="},
+		{Type: token.INT, Literal: "10"},
+		{Type: token.SEMICOLON, Literal: ";"},
+		{Type: token.INT, Literal: "10"},
+		{Type: token.NOTEQ, Literal: "!="},
+		{Type: token.INT, Literal: "9"},
+		{Type: token.SEMICOLON, Literal: ";"},
 	}
 
 	l := New(input)

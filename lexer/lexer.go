@@ -26,7 +26,19 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.currentRune {
 	case '=':
-		t = newToken(token.ASSIGN, l.currentRune)
+		if l.peekRune() == '=' {
+			t = token.Token{Type: token.EQ, Literal: "=="}
+			l.consumeRune()
+		} else {
+			t = newToken(token.ASSIGN, l.currentRune)
+		}
+	case '!':
+		if l.peekRune() == '=' {
+			t = token.Token{Type: token.NOTEQ, Literal: "!="}
+			l.consumeRune()
+		} else {
+			t = newToken(token.BANG, l.currentRune)
+		}
 	case '+':
 		t = newToken(token.PLUS, l.currentRune)
 	case '-':
@@ -35,8 +47,6 @@ func (l *Lexer) NextToken() token.Token {
 		t = newToken(token.ASTERISK, l.currentRune)
 	case '/':
 		t = newToken(token.SLASH, l.currentRune)
-	case '!':
-		t = newToken(token.BANG, l.currentRune)
 	case '<':
 		t = newToken(token.LT, l.currentRune)
 	case '>':
