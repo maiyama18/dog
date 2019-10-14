@@ -85,13 +85,7 @@ bar;
 		if !ok {
 			t.Fatalf("not ExpressionStatement: %+v", s)
 		}
-		ident, ok := expStmt.Expression.(*ast.Identifier)
-		if !ok {
-			t.Fatalf("not Identifier: %+v", expStmt.Expression)
-		}
-		if ident.Name != expectedIdentNames[i] {
-			t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentNames[i], ident.Name)
-		}
+		testIdentifier(t, expStmt.Expression, expectedIdentNames[i])
 	}
 }
 
@@ -118,22 +112,10 @@ func TestIntegerLiterals(t *testing.T) {
 	}
 }
 
-func testIntegerLiteral(t *testing.T, exp ast.Expression, want int64) {
-	t.Helper()
-
-	intLiteral, ok := exp.(*ast.IntegerLiteral)
-	if !ok {
-		t.Fatalf("not IntegerLiteral: %+v", exp)
-	}
-	if intLiteral.Value != want {
-		t.Fatalf("integer value wrong. want=%q, got=%q", want, intLiteral.Value)
-	}
-}
-
 func TestPrefixExpressions(t *testing.T) {
 	type want struct {
 		operator string
-		value    int64
+		value    interface{}
 	}
 	tests := []struct {
 		input string
@@ -168,7 +150,7 @@ func TestPrefixExpressions(t *testing.T) {
 			if prefixExp.Operator != test.want.operator {
 				t.Fatalf("operator wrong. want=%q, got=%q", test.want.operator, prefixExp.Operator)
 			}
-			testIntegerLiteral(t, prefixExp.Right, test.want.value)
+			testLiteralExpression(t, prefixExp.Right, test.want.value)
 		})
 	}
 }
@@ -176,8 +158,8 @@ func TestPrefixExpressions(t *testing.T) {
 func TestInfixExpressions(t *testing.T) {
 	type want struct {
 		operator string
-		left     int64
-		right    int64
+		left     interface{}
+		right    interface{}
 	}
 	tests := []struct {
 		input string
@@ -215,6 +197,14 @@ func TestInfixExpressions(t *testing.T) {
 			input: "5 > 6;",
 			want:  want{operator: ">", left: 5, right: 6},
 		},
+		{
+			input: "alice == bob",
+			want:  want{operator: "==", left: "alice", right: "bob"},
+		},
+		{
+			input: "alice != bob",
+			want:  want{operator: "!=", left: "alice", right: "bob"},
+		},
 	}
 
 	for _, test := range tests {
@@ -236,8 +226,8 @@ func TestInfixExpressions(t *testing.T) {
 			if infixExp.Operator != test.want.operator {
 				t.Fatalf("operator wrong. want=%q, got=%q", test.want.operator, infixExp.Operator)
 			}
-			testIntegerLiteral(t, infixExp.Left, test.want.left)
-			testIntegerLiteral(t, infixExp.Right, test.want.right)
+			testLiteralExpression(t, infixExp.Left, test.want.left)
+			testLiteralExpression(t, infixExp.Right, test.want.right)
 		})
 	}
 }
@@ -301,4 +291,41 @@ func parseProgram(t *testing.T, input string) *ast.Program {
 	}
 
 	return program
+}
+
+func testLiteralExpression(t *testing.T, exp ast.Expression, want interface{}) {
+	switch want := want.(type) {
+	case int:
+		testIntegerLiteral(t, exp, int64(want))
+	case int64:
+		testIntegerLiteral(t, exp, want)
+	case string:
+		testIdentifier(t, exp, want)
+	default:
+		t.Fatalf("literal %+v not handled", exp)
+	}
+}
+
+func testIntegerLiteral(t *testing.T, exp ast.Expression, want int64) {
+	t.Helper()
+
+	intLiteral, ok := exp.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("not IntegerLiteral: %+v", exp)
+	}
+	if intLiteral.Value != want {
+		t.Fatalf("integer value wrong. want=%q, got=%q", want, intLiteral.Value)
+	}
+}
+
+func testIdentifier(t *testing.T, exp ast.Expression, want string) {
+	t.Helper()
+
+	ident, ok := exp.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("not Identifier: %+v", exp)
+	}
+	if ident.Name != want {
+		t.Fatalf("identifier name wrong. want=%q, got=%q", want, ident.Name)
+	}
 }
