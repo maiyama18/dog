@@ -194,6 +194,8 @@ func (p *Parser) getParsePrefixFunc() (parsePrefixFunc, error) {
 		return p.parseBooleanLiteral, nil
 	case token.BANG, token.MINUS:
 		return p.parsePrefixExpression, nil
+	case token.LPAREN:
+		return p.parseGroupedExpression, nil
 	default:
 		return nil, fmt.Errorf("could not find to parse prefix function for token type %+v", p.currentToken)
 	}
@@ -221,6 +223,16 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	precedence := getPrecedence(opToken.Type)
 	right := p.parseExpression(precedence)
 	return &ast.InfixExpression{Token: opToken, Operator: opToken.Literal, Left: left, Right: right}
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.consumeToken()
+	exp := p.parseExpression(LOWEST)
+	if err := p.expectNextTokenType(token.RPAREN); err != nil {
+		p.addError(err)
+		return nil
+	}
+	return exp
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
