@@ -44,6 +44,14 @@ type ReturnStatement struct {
 func (r *ReturnStatement) statement()           {}
 func (r *ReturnStatement) TokenLiteral() string { return r.Token.Literal }
 
+type ExpressionStatement struct {
+	Token      token.Token // first token of the expression
+	Expression Expression
+}
+
+func (e *ExpressionStatement) statement()           {}
+func (e *ExpressionStatement) TokenLiteral() string { return e.Token.Literal }
+
 type Identifier struct {
 	Token token.Token // token.IDENT
 	Name  string
