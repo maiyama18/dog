@@ -40,6 +40,21 @@ func (p *Program) String() string {
 	return buff.String()
 }
 
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (b *BlockStatement) statement()           {}
+func (b *BlockStatement) TokenLiteral() string { return b.Token.Literal }
+func (b *BlockStatement) String() string {
+	var buff strings.Builder
+	for _, s := range b.Statements {
+		buff.WriteString(s.String())
+	}
+	return buff.String()
+}
+
 type LetStatement struct {
 	Token      token.Token
 	Identifier *Identifier
@@ -88,6 +103,24 @@ func (e *ExpressionStatement) String() string {
 		buff.WriteString(e.Expression.String())
 	}
 	buff.WriteString(";")
+	return buff.String()
+}
+
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (i *IfExpression) expression()          {}
+func (i *IfExpression) TokenLiteral() string { return i.Token.Literal }
+func (i *IfExpression) String() string {
+	var buff strings.Builder
+	buff.WriteString(fmt.Sprintf("if (%s) { %s }", i.Condition.String(), i.Consequence.String()))
+	if i.Alternative != nil {
+		buff.WriteString(fmt.Sprintf(" else { %s }", i.Alternative.String()))
+	}
 	return buff.String()
 }
 

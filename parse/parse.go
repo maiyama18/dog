@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -99,7 +100,7 @@ func (p *Parser) nextPrecedence() Precedence {
 
 func (p *Parser) expectNextTokenType(tokenType token.Type) error {
 	if !p.isNextTokenType(tokenType) {
-		return fmt.Errorf("expect token type %v, bug got %v", tokenType, p.currentToken)
+		return fmt.Errorf("expect token type %q, bug got %q", tokenType, p.nextToken.Type)
 	}
 	p.consumeToken()
 	return nil
@@ -162,6 +163,25 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return &ast.ExpressionStatement{Token: tok, Expression: expression}
 }
 
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	tok := p.currentToken
+
+	var statements []ast.Statement
+	for !p.isNextTokenType(token.RBRACE) && !p.isNextTokenType(token.EOF) {
+		p.consumeToken()
+		s := p.parseStatement()
+		if s != nil {
+			statements = append(statements, s)
+		}
+	}
+	if err := p.expectNextTokenType(token.RBRACE); err != nil {
+		p.addError(err)
+		return nil
+	}
+
+	return &ast.BlockStatement{Token: tok, Statements: statements}
+}
+
 func (p *Parser) parseExpression(precedence Precedence) ast.Expression {
 	parsePrefix, err := p.getParsePrefixFunc()
 	if err != nil {
@@ -196,6 +216,8 @@ func (p *Parser) getParsePrefixFunc() (parsePrefixFunc, error) {
 		return p.parsePrefixExpression, nil
 	case token.LPAREN:
 		return p.parseGroupedExpression, nil
+	case token.IF:
+		return p.parseIfExpression, nil
 	default:
 		return nil, fmt.Errorf("could not find to parse prefix function for token type %+v", p.currentToken)
 	}
@@ -233,6 +255,43 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 		return nil
 	}
 	return exp
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	tok := p.currentToken
+	if err := p.expectNextTokenType(token.LPAREN); err != nil {
+		p.addError(err)
+		return nil
+	}
+	p.consumeToken()
+
+	condition := p.parseExpression(LOWEST)
+	if condition == nil {
+		p.addError(errors.New("failed to parse condition of if expression"))
+	}
+
+	if err := p.expectNextTokenType(token.RPAREN); err != nil {
+		p.addError(err)
+		return nil
+	}
+	if err := p.expectNextTokenType(token.LBRACE); err != nil {
+		p.addError(err)
+		return nil
+	}
+
+	consequence := p.parseBlockStatement()
+
+	var alternative *ast.BlockStatement
+	if p.isNextTokenType(token.ELSE) {
+		p.consumeToken()
+		if err := p.expectNextTokenType(token.LBRACE); err != nil {
+			p.addError(err)
+			return nil
+		}
+		alternative = p.parseBlockStatement()
+	}
+
+	return &ast.IfExpression{Token: tok, Condition: condition, Consequence: consequence, Alternative: alternative}
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {

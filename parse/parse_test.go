@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/maiyama18/dog/ast"
@@ -193,14 +194,7 @@ func TestPrefixExpressions(t *testing.T) {
 			if !ok {
 				t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
 			}
-			prefixExp, ok := expStmt.Expression.(*ast.PrefixExpression)
-			if !ok {
-				t.Fatalf("not PrefixExp: %+v", expStmt.Expression)
-			}
-			if prefixExp.Operator != test.want.operator {
-				t.Fatalf("operator wrong. want=%q, got=%q", test.want.operator, prefixExp.Operator)
-			}
-			testLiteralExpression(t, prefixExp.Right, test.want.value)
+			testPrefixExpression(t, expStmt.Expression, test.want.operator, test.want.value)
 		})
 	}
 }
@@ -269,17 +263,57 @@ func TestInfixExpressions(t *testing.T) {
 			if !ok {
 				t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
 			}
-			infixExp, ok := expStmt.Expression.(*ast.InfixExpression)
-			if !ok {
-				t.Fatalf("not PrefixExp: %+v", expStmt.Expression)
-			}
-			if infixExp.Operator != test.want.operator {
-				t.Fatalf("operator wrong. want=%q, got=%q", test.want.operator, infixExp.Operator)
-			}
-			testLiteralExpression(t, infixExp.Left, test.want.left)
-			testLiteralExpression(t, infixExp.Right, test.want.right)
+			testInfixExpression(t, expStmt.Expression, test.want.operator, test.want.left, test.want.right)
 		})
 	}
+}
+
+func TestIfExpressions(t *testing.T) {
+	input := `if (x > y) { x }; if (true) { x } else { -x };`
+
+	program := parseProgram(t, input)
+
+	if len(program.Statements) != 2 {
+		t.Fatalf("program statements length wrong. want=%d, got=%d", 2, len(program.Statements))
+	}
+
+	expStmt1, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
+	}
+	ifExp1, ok := expStmt1.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("not IfExpression: %+v", expStmt1.Expression)
+	}
+	testInfixExpression(t, ifExp1.Condition, ">", "x", "y")
+	if len(ifExp1.Consequence.Statements) != 1 {
+		t.Fatalf("consequence statements length wrong. want=%d, got=%d", 1, len(ifExp1.Consequence.Statements))
+	}
+	consqExpStmt1, ok := ifExp1.Consequence.Statements[0].(*ast.ExpressionStatement)
+	testLiteralExpression(t, consqExpStmt1.Expression, "x")
+	if ifExp1.Alternative != nil {
+		t.Fatalf("alternative not nil")
+	}
+
+	expStmt2, ok := program.Statements[1].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ExpressionStatement: %+v", program.Statements[1])
+	}
+	ifExp2, ok := expStmt2.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("not IfExpression: %+v", expStmt1.Expression)
+	}
+	testLiteralExpression(t, ifExp2.Condition, true)
+	if len(ifExp1.Consequence.Statements) != 1 {
+		t.Fatalf("consequence statements length wrong. want=%d, got=%d", 1, len(ifExp1.Consequence.Statements))
+	}
+	consqExpStmt2, ok := ifExp2.Consequence.Statements[0].(*ast.ExpressionStatement)
+	testLiteralExpression(t, consqExpStmt2.Expression, "x")
+	if ifExp2.Alternative == nil {
+		t.Fatalf("alternative nil")
+	}
+	alterExpStmt, ok := ifExp2.Alternative.Statements[0].(*ast.ExpressionStatement)
+	testPrefixExpression(t, alterExpStmt.Expression, "-", "x")
 }
 
 func TestOperatorPrecedences(t *testing.T) {
@@ -354,13 +388,40 @@ func parseProgram(t *testing.T, input string) *ast.Program {
 	program := parser.ParseProgram()
 
 	if len(parser.Errors()) > 0 {
-		t.Fatalf("got parser errors: %+v", parser.Errors())
+		var errMsgs []string
+		for _, err := range parser.Errors() {
+			errMsgs = append(errMsgs, err.Error())
+		}
+		t.Fatalf("got parser errors: \n%s", strings.Join(errMsgs, "\n"))
 	}
 	if program == nil {
 		t.Fatalf("program is nil")
 	}
 
 	return program
+}
+
+func testPrefixExpression(t *testing.T, exp ast.Expression, wantedOperator string, wantedRight interface{}) {
+	prefixExp, ok := exp.(*ast.PrefixExpression)
+	if !ok {
+		t.Fatalf("not PrefixExp: %+v", exp)
+	}
+	if prefixExp.Operator != wantedOperator {
+		t.Fatalf("operator wrong. want=%q, got=%q", wantedOperator, prefixExp.Operator)
+	}
+	testLiteralExpression(t, prefixExp.Right, wantedRight)
+}
+
+func testInfixExpression(t *testing.T, exp ast.Expression, wantedOperator string, wantedLeft, wantedRight interface{}) {
+	infixExp, ok := exp.(*ast.InfixExpression)
+	if !ok {
+		t.Fatalf("not PrefixExp: %+v", exp)
+	}
+	if infixExp.Operator != wantedOperator {
+		t.Fatalf("operator wrong. want=%q, got=%q", wantedOperator, infixExp.Operator)
+	}
+	testLiteralExpression(t, infixExp.Left, wantedLeft)
+	testLiteralExpression(t, infixExp.Right, wantedRight)
 }
 
 func testLiteralExpression(t *testing.T, exp ast.Expression, want interface{}) {
