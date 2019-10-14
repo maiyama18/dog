@@ -315,6 +315,14 @@ func TestOperatorPrecedences(t *testing.T) {
 			input: "3 + 5 != 7 * 9;",
 			want:  "((3 + 5) != (7 * 9));",
 		},
+		{
+			input: "true == !false;",
+			want:  "(true == (!false));",
+		},
+		{
+			input: "true == false != false;",
+			want:  "((true == false) != false);",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
