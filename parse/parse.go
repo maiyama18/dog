@@ -46,6 +46,8 @@ func NewParser(lexer *lex.Lexer) *Parser {
 	p.parsePrefixFuncs = map[token.Type]parsePrefix{
 		token.IDENT: p.parseIdentifier,
 		token.INT:   p.parseIntegerLiteral,
+		token.BANG:  p.parsePrefixExpression,
+		token.MINUS: p.parsePrefixExpression,
 	}
 
 	return p
@@ -129,7 +131,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseExpression(precedence Precedence) ast.Expression {
 	f := p.getParsePrefixFunc()
 	if f == nil {
-		p.addError(fmt.Errorf("could not find to find parse function for token type %s", p.currentToken))
+		p.addError(fmt.Errorf("could not find to parse function for token type %+v", p.currentToken))
 		return nil
 	}
 
@@ -165,6 +167,13 @@ func (p *Parser) expectNextTokenType(tokenType token.Type) error {
 
 func (p *Parser) getParsePrefixFunc() parsePrefix {
 	return p.parsePrefixFuncs[p.currentToken.Type]
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	tok := p.currentToken
+	p.consumeToken()
+	right := p.parseExpression(PREFIX)
+	return &ast.PrefixExpression{Token: tok, Operator: tok.Literal, Right: right}
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {

@@ -30,13 +30,13 @@ let foo = 42;
 func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentName string) {
 	t.Helper()
 
-	letStatement, ok := statement.(*ast.LetStatement)
+	letStmt, ok := statement.(*ast.LetStatement)
 	if !ok {
 		t.Fatalf("not LetStatement: %+v", statement)
 	}
 
-	if letStatement.Identifier.Name != expectedIdentName {
-		t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentName, letStatement.Identifier.Name)
+	if letStmt.Identifier.Name != expectedIdentName {
+		t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentName, letStmt.Identifier.Name)
 	}
 }
 
@@ -81,13 +81,13 @@ bar;
 	}
 
 	for i, s := range program.Statements {
-		expStatement, ok := s.(*ast.ExpressionStatement)
+		expStmt, ok := s.(*ast.ExpressionStatement)
 		if !ok {
 			t.Fatalf("not ExpressionStatement: %+v", s)
 		}
-		ident, ok := expStatement.Expression.(*ast.Identifier)
+		ident, ok := expStmt.Expression.(*ast.Identifier)
 		if !ok {
-			t.Fatalf("not Identifier: %+v", expStatement.Expression)
+			t.Fatalf("not Identifier: %+v", expStmt.Expression)
 		}
 		if ident.Name != expectedIdentNames[i] {
 			t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentNames[i], ident.Name)
@@ -110,17 +110,66 @@ func TestIntegerLiterals(t *testing.T) {
 	}
 
 	for i, s := range program.Statements {
-		expStatement, ok := s.(*ast.ExpressionStatement)
+		expStmt, ok := s.(*ast.ExpressionStatement)
 		if !ok {
 			t.Fatalf("not ExpressionStatement: %+v", s)
 		}
-		il, ok := expStatement.Expression.(*ast.IntegerLiteral)
-		if !ok {
-			t.Fatalf("not IntegerLiteral: %+v", expStatement.Expression)
-		}
-		if il.Value != expectedInts[i] {
-			t.Fatalf("integer value wrong. want=%q, got=%q", expectedInts[i], il.Value)
-		}
+		testIntegerLiteral(t, expStmt.Expression, expectedInts[i])
+	}
+}
+
+func testIntegerLiteral(t *testing.T, exp ast.Expression, want int64) {
+	t.Helper()
+
+	intLiteral, ok := exp.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("not IntegerLiteral: %+v", exp)
+	}
+	if intLiteral.Value != want {
+		t.Fatalf("integer value wrong. want=%q, got=%q", want, intLiteral.Value)
+	}
+}
+
+func TestPrefixExpressions(t *testing.T) {
+	type want struct {
+		operator string
+		value    int64
+	}
+	tests := []struct {
+		input string
+		want  want
+	}{
+		{
+			input: "!5;",
+			want:  want{operator: "!", value: 5},
+		},
+		{
+			input: "-42;",
+			want:  want{operator: "-", value: 42},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statments length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
+			}
+			prefixExp, ok := expStmt.Expression.(*ast.PrefixExpression)
+			if !ok {
+				t.Fatalf("not PrefixExp: %+v", expStmt.Expression)
+			}
+			if prefixExp.Operator != test.want.operator {
+				t.Fatalf("operator wrong. want=%q, got=%q", test.want.operator, prefixExp.Operator)
+			}
+			testIntegerLiteral(t, prefixExp.Right, test.want.value)
+		})
 	}
 }
 

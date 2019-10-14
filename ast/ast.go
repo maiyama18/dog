@@ -91,8 +91,18 @@ func (e *ExpressionStatement) String() string {
 	return buff.String()
 }
 
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+func (p *PrefixExpression) expression()          {}
+func (p *PrefixExpression) TokenLiteral() string { return p.Token.Literal }
+func (p *PrefixExpression) String() string       { return p.Operator + p.Right.String() }
+
 type Identifier struct {
-	Token token.Token // token.IDENT
+	Token token.Token
 	Name  string
 }
 
