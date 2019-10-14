@@ -173,6 +173,75 @@ func TestPrefixExpressions(t *testing.T) {
 	}
 }
 
+func TestInfixExpressions(t *testing.T) {
+	type want struct {
+		operator string
+		left     int64
+		right    int64
+	}
+	tests := []struct {
+		input string
+		want  want
+	}{
+		{
+			input: "5 + 6;",
+			want:  want{operator: "+", left: 5, right: 6},
+		},
+		{
+			input: "5 - 6;",
+			want:  want{operator: "-", left: 5, right: 6},
+		},
+		{
+			input: "5 * 6;",
+			want:  want{operator: "*", left: 5, right: 6},
+		},
+		{
+			input: "5 / 6;",
+			want:  want{operator: "/", left: 5, right: 6},
+		},
+		{
+			input: "5 == 6;",
+			want:  want{operator: "==", left: 5, right: 6},
+		},
+		{
+			input: "5 != 6;",
+			want:  want{operator: "!=", left: 5, right: 6},
+		},
+		{
+			input: "5 < 6;",
+			want:  want{operator: "<", left: 5, right: 6},
+		},
+		{
+			input: "5 > 6;",
+			want:  want{operator: ">", left: 5, right: 6},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statments length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
+			}
+			infixExp, ok := expStmt.Expression.(*ast.InfixExpression)
+			if !ok {
+				t.Fatalf("not PrefixExp: %+v", expStmt.Expression)
+			}
+			if infixExp.Operator != test.want.operator {
+				t.Fatalf("operator wrong. want=%q, got=%q", test.want.operator, infixExp.Operator)
+			}
+			testIntegerLiteral(t, infixExp.Left, test.want.left)
+			testIntegerLiteral(t, infixExp.Right, test.want.right)
+		})
+	}
+}
+
 func parseProgram(t *testing.T, input string) *ast.Program {
 	lexer := lex.NewLexer(input)
 	parser := NewParser(lexer)
