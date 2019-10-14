@@ -190,6 +190,8 @@ func (p *Parser) getParsePrefixFunc() (parsePrefixFunc, error) {
 		return p.parseIdentifier, nil
 	case token.INT:
 		return p.parseIntegerLiteral, nil
+	case token.TRUE, token.FALSE:
+		return p.parseBooleanLiteral, nil
 	case token.BANG, token.MINUS:
 		return p.parsePrefixExpression, nil
 	default:
@@ -232,4 +234,8 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 		return nil
 	}
 	return &ast.IntegerLiteral{Token: p.currentToken, Value: i}
+}
+
+func (p *Parser) parseBooleanLiteral() ast.Expression {
+	return &ast.BooleanLiteral{Token: p.currentToken, Value: p.isCurrentTokenType(token.TRUE)}
 }

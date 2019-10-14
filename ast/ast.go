@@ -124,10 +124,19 @@ func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string       { return i.Name }
 
 type IntegerLiteral struct {
-	Token token.Token // token.INT
+	Token token.Token
 	Value int64
 }
 
 func (i *IntegerLiteral) expression()          {}
 func (i *IntegerLiteral) TokenLiteral() string { return i.Token.Literal }
 func (i *IntegerLiteral) String() string       { return i.Token.Literal }
+
+type BooleanLiteral struct {
+	Token token.Token
+	Value bool
+}
+
+func (b *BooleanLiteral) expression()          {}
+func (b *BooleanLiteral) TokenLiteral() string { return b.Token.Literal }
+func (b *BooleanLiteral) String() string       { return b.Token.Literal }

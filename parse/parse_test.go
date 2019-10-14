@@ -19,7 +19,7 @@ let foo = 42;
 	expectedIdentNames := []string{"x", "foo"}
 
 	if len(program.Statements) != len(expectedIdentNames) {
-		t.Fatalf("program statments length wrong. want=%d, got=%d", len(expectedIdentNames), len(program.Statements))
+		t.Fatalf("program statements length wrong. want=%d, got=%d", len(expectedIdentNames), len(program.Statements))
 	}
 
 	for i, s := range program.Statements {
@@ -49,7 +49,7 @@ return 42;
 	program := parseProgram(t, input)
 
 	if len(program.Statements) != 2 {
-		t.Fatalf("program statments length wrong. want=%d, got=%d", 2, len(program.Statements))
+		t.Fatalf("program statements length wrong. want=%d, got=%d", 2, len(program.Statements))
 	}
 
 	for _, s := range program.Statements {
@@ -67,48 +67,98 @@ func testReturnStatement(t *testing.T, statement ast.Statement) {
 }
 
 func TestIdentifiers(t *testing.T) {
-	input := `
-foo;
-bar;
-`
-
-	program := parseProgram(t, input)
-
-	expectedIdentNames := []string{"foo", "bar"}
-
-	if len(program.Statements) != len(expectedIdentNames) {
-		t.Fatalf("program statments length wrong. want=%d, got=%d", len(expectedIdentNames), len(program.Statements))
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "a;",
+			want:  "a",
+		},
+		{
+			input: "foobar;",
+			want:  "foobar",
+		},
 	}
 
-	for i, s := range program.Statements {
-		expStmt, ok := s.(*ast.ExpressionStatement)
-		if !ok {
-			t.Fatalf("not ExpressionStatement: %+v", s)
-		}
-		testIdentifier(t, expStmt.Expression, expectedIdentNames[i])
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("not ExpressionStatement: %+v", expStmt)
+			}
+			testIdentifier(t, expStmt.Expression, test.want)
+		})
 	}
 }
 
 func TestIntegerLiterals(t *testing.T) {
-	input := `
-42;
-3;
-`
-
-	program := parseProgram(t, input)
-
-	expectedInts := []int64{42, 3}
-
-	if len(program.Statements) != len(expectedInts) {
-		t.Fatalf("program statments length wrong. want=%d, got=%d", len(expectedInts), len(program.Statements))
+	tests := []struct {
+		input string
+		want  int64
+	}{
+		{
+			input: "3;",
+			want:  3,
+		},
+		{
+			input: "42;",
+			want:  42,
+		},
 	}
 
-	for i, s := range program.Statements {
-		expStmt, ok := s.(*ast.ExpressionStatement)
-		if !ok {
-			t.Fatalf("not ExpressionStatement: %+v", s)
-		}
-		testIntegerLiteral(t, expStmt.Expression, expectedInts[i])
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("not ExpressionStatement: %+v", expStmt)
+			}
+			testIntegerLiteral(t, expStmt.Expression, test.want)
+		})
+	}
+}
+
+func TestBooleanLiterals(t *testing.T) {
+	tests := []struct {
+		input string
+		want  bool
+	}{
+		{
+			input: "true;",
+			want:  true,
+		},
+		{
+			input: "false;",
+			want:  false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("not ExpressionStatement: %+v", expStmt)
+			}
+			testBooleanLiteral(t, expStmt.Expression, test.want)
+		})
 	}
 }
 
@@ -136,7 +186,7 @@ func TestPrefixExpressions(t *testing.T) {
 			program := parseProgram(t, test.input)
 
 			if len(program.Statements) != 1 {
-				t.Fatalf("program statments length wrong. want=%d, got=%d", 1, len(program.Statements))
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
 			}
 
 			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
@@ -212,7 +262,7 @@ func TestInfixExpressions(t *testing.T) {
 			program := parseProgram(t, test.input)
 
 			if len(program.Statements) != 1 {
-				t.Fatalf("program statments length wrong. want=%d, got=%d", 1, len(program.Statements))
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
 			}
 
 			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
@@ -299,6 +349,8 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, want interface{}) {
 		testIntegerLiteral(t, exp, int64(want))
 	case int64:
 		testIntegerLiteral(t, exp, want)
+	case bool:
+		testBooleanLiteral(t, exp, want)
 	case string:
 		testIdentifier(t, exp, want)
 	default:
@@ -315,6 +367,18 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, want int64) {
 	}
 	if intLiteral.Value != want {
 		t.Fatalf("integer value wrong. want=%q, got=%q", want, intLiteral.Value)
+	}
+}
+
+func testBooleanLiteral(t *testing.T, exp ast.Expression, want bool) {
+	t.Helper()
+
+	boolLiteral, ok := exp.(*ast.BooleanLiteral)
+	if !ok {
+		t.Fatalf("not BooleanLiteral: %+v", exp)
+	}
+	if boolLiteral.Value != want {
+		t.Fatalf("integer value wrong. want=%t, got=%t", want, boolLiteral.Value)
 	}
 }
 
