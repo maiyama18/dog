@@ -14,22 +14,13 @@ let x = 5;
 let foo = 42;
 `
 
-	lexer := lex.NewLexer(input)
-	parser := NewParser(lexer)
-
-	program := parser.ParseProgram()
-
-	if len(parser.Errors()) > 0 {
-		t.Fatalf("got parser errors: %+v", parser.Errors())
-	}
-	if program == nil {
-		t.Fatalf("program is nil")
-	}
-	if len(program.Statements) != 2 {
-		t.Fatalf("program statments length wrong. want=%d, got=%d", 2, len(program.Statements))
-	}
+	program := parseProgram(t, input)
 
 	expectedIdentNames := []string{"x", "foo"}
+
+	if len(program.Statements) != len(expectedIdentNames) {
+		t.Fatalf("program statments length wrong. want=%d, got=%d", len(expectedIdentNames), len(program.Statements))
+	}
 
 	for i, s := range program.Statements {
 		testLetStatement(t, s, expectedIdentNames[i])
@@ -55,17 +46,8 @@ return 5;
 return 42;
 `
 
-	lexer := lex.NewLexer(input)
-	parser := NewParser(lexer)
+	program := parseProgram(t, input)
 
-	program := parser.ParseProgram()
-
-	if len(parser.Errors()) > 0 {
-		t.Fatalf("got parser errors: %+v", parser.Errors())
-	}
-	if program == nil {
-		t.Fatalf("program is nil")
-	}
 	if len(program.Statements) != 2 {
 		t.Fatalf("program statments length wrong. want=%d, got=%d", 2, len(program.Statements))
 	}
@@ -82,4 +64,49 @@ func testReturnStatement(t *testing.T, statement ast.Statement) {
 	if !ok {
 		t.Fatalf("not ReturnStatement: %+v", statement)
 	}
+}
+
+func TestIdentifiers(t *testing.T) {
+	input := `
+foo;
+bar;
+`
+
+	program := parseProgram(t, input)
+
+	expectedIdentNames := []string{"foo", "bar"}
+
+	if len(program.Statements) != len(expectedIdentNames) {
+		t.Fatalf("program statments length wrong. want=%d, got=%d", len(expectedIdentNames), len(program.Statements))
+	}
+
+	for i, s := range program.Statements {
+		expStatement, ok := s.(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("not ExpressionStatement: %+v", s)
+		}
+		ident, ok := expStatement.Expression.(*ast.Identifier)
+		if !ok {
+			t.Fatalf("not Identifier: %+v", expStatement.Expression)
+		}
+		if ident.Name != expectedIdentNames[i] {
+			t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentNames, ident.Name)
+		}
+	}
+}
+
+func parseProgram(t *testing.T, input string) *ast.Program {
+	lexer := lex.NewLexer(input)
+	parser := NewParser(lexer)
+
+	program := parser.ParseProgram()
+
+	if len(parser.Errors()) > 0 {
+		t.Fatalf("got parser errors: %+v", parser.Errors())
+	}
+	if program == nil {
+		t.Fatalf("program is nil")
+	}
+
+	return program
 }

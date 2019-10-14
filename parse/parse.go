@@ -8,10 +8,30 @@ import (
 	"github.com/maiyama18/dog/token"
 )
 
+type Precedence int
+
+const (
+	LOWEST Precedence = iota + 1
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
+
+type (
+	parsePrefix func() ast.Expression
+	parseInfix  func(ast.Expression) ast.Expression
+)
+
 type Parser struct {
 	lexer        *lex.Lexer
 	currentToken token.Token
 	nextToken    token.Token
+
+	parsePrefixFuncs map[token.Type]parsePrefix
+	parseInfixFuncs  map[token.Type]parseInfix
 
 	errors []error
 }
@@ -21,6 +41,10 @@ func NewParser(lexer *lex.Lexer) *Parser {
 
 	p.consumeToken()
 	p.consumeToken()
+
+	p.parsePrefixFuncs = map[token.Type]parsePrefix{
+		token.IDENT: p.parseIdentifier,
+	}
 
 	return p
 }
@@ -50,7 +74,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -87,6 +111,31 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return &ast.ReturnStatement{Token: tok}
 }
 
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	tok := p.currentToken
+
+	// TODO: parse expression
+	expression := p.parseExpression(LOWEST)
+
+	if p.isNextTokenType(token.SEMICOLON) {
+		p.consumeToken()
+	}
+
+	return &ast.ExpressionStatement{Token: tok, Expression: expression}
+}
+
+func (p *Parser) parseExpression(precedence Precedence) ast.Expression {
+	f := p.getParsePrefixFunc()
+	if f == nil {
+		p.addError(fmt.Errorf("could not find to find parse function for token type %s", p.currentToken))
+		return nil
+	}
+
+	left := f()
+
+	return left
+}
+
 func (p *Parser) consumeToken() {
 	p.currentToken = p.nextToken
 	p.nextToken = p.lexer.NextToken()
@@ -110,4 +159,12 @@ func (p *Parser) expectNextTokenType(tokenType token.Type) error {
 	}
 	p.consumeToken()
 	return nil
+}
+
+func (p *Parser) getParsePrefixFunc() parsePrefix {
+	return p.parsePrefixFuncs[p.currentToken.Type]
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.currentToken, Name: p.currentToken.Literal}
 }
