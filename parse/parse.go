@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/maiyama18/dog/ast"
 	"github.com/maiyama18/dog/lex"
@@ -44,6 +45,7 @@ func NewParser(lexer *lex.Lexer) *Parser {
 
 	p.parsePrefixFuncs = map[token.Type]parsePrefix{
 		token.IDENT: p.parseIdentifier,
+		token.INT:   p.parseIntegerLiteral,
 	}
 
 	return p
@@ -167,4 +169,13 @@ func (p *Parser) getParsePrefixFunc() parsePrefix {
 
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.currentToken, Name: p.currentToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	i, err := strconv.ParseInt(p.currentToken.Literal, 10, 64)
+	if err != nil {
+		p.addError(fmt.Errorf("failed to parse %q as integer literal: %v", p.currentToken.Literal, err))
+		return nil
+	}
+	return &ast.IntegerLiteral{Token: p.currentToken, Value: i}
 }

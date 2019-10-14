@@ -90,7 +90,36 @@ bar;
 			t.Fatalf("not Identifier: %+v", expStatement.Expression)
 		}
 		if ident.Name != expectedIdentNames[i] {
-			t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentNames, ident.Name)
+			t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentNames[i], ident.Name)
+		}
+	}
+}
+
+func TestIntegerLiterals(t *testing.T) {
+	input := `
+42;
+3;
+`
+
+	program := parseProgram(t, input)
+
+	expectedInts := []int64{42, 3}
+
+	if len(program.Statements) != len(expectedInts) {
+		t.Fatalf("program statments length wrong. want=%d, got=%d", len(expectedInts), len(program.Statements))
+	}
+
+	for i, s := range program.Statements {
+		expStatement, ok := s.(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("not ExpressionStatement: %+v", s)
+		}
+		il, ok := expStatement.Expression.(*ast.IntegerLiteral)
+		if !ok {
+			t.Fatalf("not IntegerLiteral: %+v", expStatement.Expression)
+		}
+		if il.Value != expectedInts[i] {
+			t.Fatalf("integer value wrong. want=%q, got=%q", expectedInts[i], il.Value)
 		}
 	}
 }
