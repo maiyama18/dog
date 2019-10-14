@@ -242,6 +242,51 @@ func TestInfixExpressions(t *testing.T) {
 	}
 }
 
+func TestOperatorPrecedences(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "!-5;",
+			want:  "(!(-5));",
+		},
+		{
+			input: "3 + -5;",
+			want:  "(3 + (-5));",
+		},
+		{
+			input: "3 + 5 + 7;",
+			want:  "((3 + 5) + 7);",
+		},
+		{
+			input: "3 + 5 * 7;",
+			want:  "(3 + (5 * 7));",
+		},
+		{
+			input: "3 + 5 * 7 + 9;",
+			want:  "((3 + (5 * 7)) + 9);",
+		},
+		{
+			input: "3 + 5 > 7;",
+			want:  "((3 + 5) > 7);",
+		},
+		{
+			input: "3 + 5 != 7 * 9;",
+			want:  "((3 + 5) != (7 * 9));",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if program.String() != test.want {
+				t.Fatalf("program string wrong. want=%q, got=%q", test.want, program.String())
+			}
+		})
+	}
+}
+
 func parseProgram(t *testing.T, input string) *ast.Program {
 	lexer := lex.NewLexer(input)
 	parser := NewParser(lexer)
