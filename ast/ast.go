@@ -124,6 +124,22 @@ func (i *IfExpression) String() string {
 	return buff.String()
 }
 
+type FunctionLiteral struct {
+	Token      token.Token
+	Parameters []Identifier
+	Body       *BlockStatement
+}
+
+func (f *FunctionLiteral) expression()          {}
+func (f *FunctionLiteral) TokenLiteral() string { return f.Token.Literal }
+func (f *FunctionLiteral) String() string {
+	var paramNames []string
+	for _, p := range f.Parameters {
+		paramNames = append(paramNames, p.Name)
+	}
+	return fmt.Sprintf("fn (%s) { %s }", strings.Join(paramNames, ", "), f.Body.String())
+}
+
 type PrefixExpression struct {
 	Token    token.Token
 	Operator string

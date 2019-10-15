@@ -218,6 +218,8 @@ func (p *Parser) getParsePrefixFunc() (parsePrefixFunc, error) {
 		return p.parseGroupedExpression, nil
 	case token.IF:
 		return p.parseIfExpression, nil
+	case token.FUNCTION:
+		return p.parseFunctionLiteral, nil
 	default:
 		return nil, fmt.Errorf("could not find to parse prefix function for token type %+v", p.currentToken)
 	}
@@ -292,6 +294,53 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	}
 
 	return &ast.IfExpression{Token: tok, Condition: condition, Consequence: consequence, Alternative: alternative}
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	tok := p.currentToken
+	if err := p.expectNextTokenType(token.LPAREN); err != nil {
+		p.addError(err)
+		return nil
+	}
+
+	parameters := p.parseFunctionParameters()
+
+	if err := p.expectNextTokenType(token.LBRACE); err != nil {
+		p.addError(err)
+		return nil
+	}
+	body := p.parseBlockStatement()
+
+	return &ast.FunctionLiteral{Token: tok, Parameters: parameters, Body: body}
+}
+
+func (p *Parser) parseFunctionParameters() []ast.Identifier {
+	if p.isNextTokenType(token.RPAREN) {
+		p.consumeToken()
+		return nil
+	}
+
+	p.consumeToken()
+
+	var parameters []ast.Identifier
+	for {
+		param, ok := p.parseIdentifier().(*ast.Identifier)
+		if ok {
+			parameters = append(parameters, *param)
+		}
+		if !p.isNextTokenType(token.COMMA) {
+			break
+		}
+		p.consumeToken()
+		p.consumeToken()
+	}
+
+	if err := p.expectNextTokenType(token.RPAREN); err != nil {
+		p.addError(err)
+		return nil
+	}
+
+	return parameters
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {

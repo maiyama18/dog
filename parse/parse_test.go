@@ -316,6 +316,91 @@ func TestIfExpressions(t *testing.T) {
 	testPrefixExpression(t, alterExpStmt.Expression, "-", "x")
 }
 
+func TestFunctionLiterals(t *testing.T) {
+	input := `fn (x, y) { x + y }`
+
+	program := parseProgram(t, input)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+	}
+
+	expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
+	}
+	funcLiteral, ok := expStmt.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("not FunctionLiteral: %+v", expStmt.Expression)
+	}
+
+	params := funcLiteral.Parameters
+	if len(params) != 2 {
+		t.Fatalf("parameters size wrong. want=%d, got=%d", 2, len(params))
+	}
+	testLiteralExpression(t, &params[0], "x")
+	testLiteralExpression(t, &params[1], "y")
+
+	stmts := funcLiteral.Body.Statements
+	if len(stmts) != 1 {
+		t.Fatalf("function literal body statments length wrong. want=%d, got=%d", 1, len(stmts))
+	}
+	bodyExpStmt, ok := stmts[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ExpressionStatement: %+v", stmts[0])
+	}
+	testInfixExpression(t, bodyExpStmt.Expression, "+", "x", "y")
+}
+
+func TestFunctionParameters(t *testing.T) {
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		{
+			input: `fn () {}`,
+			want:  []string{},
+		},
+		{
+			input: `fn (x) {}`,
+			want:  []string{"x"},
+		},
+		{
+			input: `fn (x, y) {}`,
+			want:  []string{"x", "y"},
+		},
+		{
+			input: `fn (x, y, z) {}`,
+			want:  []string{"x", "y", "z"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
+			}
+			funcLiteral, ok := expStmt.Expression.(*ast.FunctionLiteral)
+			if !ok {
+				t.Fatalf("not FunctionLiteral: %+v", expStmt.Expression)
+			}
+
+			if len(funcLiteral.Parameters) != len(test.want) {
+				t.Fatalf("parameters size wrong. want=%d, got=%d", len(test.want), len(funcLiteral.Parameters))
+			}
+			for i, w := range test.want {
+				testLiteralExpression(t, &funcLiteral.Parameters[i], w)
+			}
+		})
+	}
+}
+
 func TestOperatorPrecedences(t *testing.T) {
 	tests := []struct {
 		input string
@@ -382,6 +467,8 @@ func TestOperatorPrecedences(t *testing.T) {
 }
 
 func parseProgram(t *testing.T, input string) *ast.Program {
+	t.Helper()
+
 	lexer := lex.NewLexer(input)
 	parser := NewParser(lexer)
 
