@@ -32,6 +32,8 @@ func getPrecedence(tokenType token.Type) Precedence {
 		return SUM
 	case token.ASTERISK, token.SLASH:
 		return PRODUCT
+	case token.LPAREN:
+		return CALL
 	default:
 		return LOWEST
 	}
@@ -229,6 +231,8 @@ func (p *Parser) getParseInfixFunc() (parseInfixFunc, error) {
 	switch p.nextToken.Type {
 	case token.PLUS, token.MINUS, token.ASTERISK, token.SLASH, token.EQ, token.NOTEQ, token.GT, token.LT:
 		return p.parseInfixExpression, nil
+	case token.LPAREN:
+		return p.parseCallExpression, nil
 	default:
 		return nil, fmt.Errorf("could not find to parse infix function for token type %+v", p.currentToken)
 	}
@@ -341,6 +345,43 @@ func (p *Parser) parseFunctionParameters() []ast.Identifier {
 	}
 
 	return parameters
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	tok := p.currentToken
+
+	args := p.parseCallExpressionArguments()
+
+	return &ast.CallExpression{Token: tok, Function: function, Arguments: args}
+}
+
+func (p *Parser) parseCallExpressionArguments() []ast.Expression {
+	if p.isNextTokenType(token.RPAREN) {
+		p.consumeToken()
+		return nil
+	}
+
+	p.consumeToken()
+
+	var args []ast.Expression
+	for {
+		arg := p.parseExpression(LOWEST)
+		if arg != nil {
+			args = append(args, arg)
+		}
+		if !p.isNextTokenType(token.COMMA) {
+			break
+		}
+		p.consumeToken()
+		p.consumeToken()
+	}
+
+	if err := p.expectNextTokenType(token.RPAREN); err != nil {
+		p.addError(err)
+		return nil
+	}
+
+	return args
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {

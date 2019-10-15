@@ -140,6 +140,22 @@ func (f *FunctionLiteral) String() string {
 	return fmt.Sprintf("fn (%s) { %s }", strings.Join(paramNames, ", "), f.Body.String())
 }
 
+type CallExpression struct {
+	Token     token.Token
+	Function  Expression // Identifier or FunctionLiteral
+	Arguments []Expression
+}
+
+func (c *CallExpression) expression()          {}
+func (c *CallExpression) TokenLiteral() string { return c.Token.Literal }
+func (c *CallExpression) String() string {
+	var argStrs []string
+	for _, a := range c.Arguments {
+		argStrs = append(argStrs, a.String())
+	}
+	return fmt.Sprintf("%s(%s)", c.Function.String(), strings.Join(argStrs, ", "))
+}
+
 type PrefixExpression struct {
 	Token    token.Token
 	Operator string

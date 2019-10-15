@@ -401,6 +401,33 @@ func TestFunctionParameters(t *testing.T) {
 	}
 }
 
+func TestCallExpression(t *testing.T) {
+	input := `add(1, x * y);`
+
+	program := parseProgram(t, input)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+	}
+
+	expStmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ExpressionStatement: %+v", program.Statements[0])
+	}
+	callExp, ok := expStmt.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("not CallExpression: %+v", expStmt.Expression)
+	}
+
+	testLiteralExpression(t, callExp.Function, "add")
+
+	if len(callExp.Arguments) != 2 {
+		t.Fatalf("function literal body statments length wrong. want=%d, got=%d", 2, len(callExp.Arguments))
+	}
+	testLiteralExpression(t, callExp.Arguments[0], 1)
+	testInfixExpression(t, callExp.Arguments[1], "*", "x", "y")
+}
+
 func TestOperatorPrecedences(t *testing.T) {
 	tests := []struct {
 		input string
