@@ -5,6 +5,12 @@ import (
 	"github.com/maiyama18/dog/object"
 )
 
+var (
+	NULL  = &object.Null{}
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{Value: false}
+)
+
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
@@ -14,9 +20,13 @@ func Eval(node ast.Node) object.Object {
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 	case *ast.BooleanLiteral:
-		return &object.Boolean{Value: node.Value}
+		if node.Value {
+			return TRUE
+		} else {
+			return FALSE
+		}
 	default:
-		return nil
+		return NULL
 	}
 }
 
