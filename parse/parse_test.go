@@ -57,29 +57,42 @@ func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentName s
 }
 
 func TestReturnStatements(t *testing.T) {
-	input := `
-return 5;
-return 42;
-`
-
-	program := parseProgram(t, input)
-
-	if len(program.Statements) != 2 {
-		t.Fatalf("program statements length wrong. want=%d, got=%d", 2, len(program.Statements))
+	tests := []struct {
+		input string
+		want  interface{}
+	}{
+		{
+			input: "return 5;",
+			want:  5,
+		},
+		{
+			input: "return true",
+			want:  true,
+		},
 	}
 
-	for _, s := range program.Statements {
-		testReturnStatement(t, s)
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			testReturnStatement(t, program.Statements[0], test.want)
+		})
 	}
 }
 
-func testReturnStatement(t *testing.T, statement ast.Statement) {
+func testReturnStatement(t *testing.T, statement ast.Statement, expected interface{}) {
 	t.Helper()
 
-	_, ok := statement.(*ast.ReturnStatement)
+	returnStmt, ok := statement.(*ast.ReturnStatement)
 	if !ok {
 		t.Fatalf("not ReturnStatement: %+v", statement)
 	}
+
+	testLiteralExpression(t, returnStmt.Expression, expected)
 }
 
 func TestIdentifiers(t *testing.T) {
