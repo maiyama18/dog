@@ -10,25 +10,38 @@ import (
 )
 
 func TestLetStatements(t *testing.T) {
-	input := `
-let x = 5;
-let foo = 42;
-`
-
-	program := parseProgram(t, input)
-
-	expectedIdentNames := []string{"x", "foo"}
-
-	if len(program.Statements) != len(expectedIdentNames) {
-		t.Fatalf("program statements length wrong. want=%d, got=%d", len(expectedIdentNames), len(program.Statements))
+	type want struct {
+		identifier string
+		expression interface{}
+	}
+	tests := []struct {
+		input string
+		want  want
+	}{
+		{
+			input: "let x = 5;",
+			want:  want{identifier: "x", expression: 5},
+		},
+		{
+			input: "let foo = true;",
+			want:  want{identifier: "foo", expression: true},
+		},
 	}
 
-	for i, s := range program.Statements {
-		testLetStatement(t, s, expectedIdentNames[i])
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			program := parseProgram(t, test.input)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("program statements length wrong. want=%d, got=%d", 1, len(program.Statements))
+			}
+
+			testLetStatement(t, program.Statements[0], test.want.identifier, test.want.expression)
+		})
 	}
 }
 
-func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentName string) {
+func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentName string, expectedExp interface{}) {
 	t.Helper()
 
 	letStmt, ok := statement.(*ast.LetStatement)
@@ -39,6 +52,8 @@ func testLetStatement(t *testing.T, statement ast.Statement, expectedIdentName s
 	if letStmt.Identifier.Name != expectedIdentName {
 		t.Fatalf("identifier name wrong. want=%q, got=%q", expectedIdentName, letStmt.Identifier.Name)
 	}
+
+	testLiteralExpression(t, letStmt.Expression, expectedExp)
 }
 
 func TestReturnStatements(t *testing.T) {

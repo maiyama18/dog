@@ -133,29 +133,32 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	// TODO: parse expression
-	for !p.isCurrentTokenType(token.SEMICOLON) {
+	p.consumeToken()
+	expression := p.parseExpression(LOWEST)
+
+	for p.isNextTokenType(token.SEMICOLON) {
 		p.consumeToken()
 	}
 
-	return &ast.LetStatement{Token: tok, Identifier: ident}
+	return &ast.LetStatement{Token: tok, Identifier: ident, Expression: expression}
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	tok := p.currentToken
 
-	// TODO: parse expression
-	for !p.isCurrentTokenType(token.SEMICOLON) {
+	p.consumeToken()
+	expression := p.parseExpression(LOWEST)
+
+	if p.isNextTokenType(token.SEMICOLON) {
 		p.consumeToken()
 	}
 
-	return &ast.ReturnStatement{Token: tok}
+	return &ast.ReturnStatement{Token: tok, Expression: expression}
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	tok := p.currentToken
 
-	// TODO: parse expression
 	expression := p.parseExpression(LOWEST)
 
 	if p.isNextTokenType(token.SEMICOLON) {
