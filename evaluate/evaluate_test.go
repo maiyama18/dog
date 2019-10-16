@@ -8,7 +8,7 @@ import (
 	"github.com/maiyama18/dog/parse"
 )
 
-func TestEvalIntegerExpression(t *testing.T) {
+func TestEvalInteger(t *testing.T) {
 	tests := []struct {
 		input string
 		want  int64
@@ -40,6 +40,41 @@ func testInteger(t *testing.T, got object.Object, want int64) {
 
 	if integer.Value != want {
 		t.Fatalf("integer value wrong. want=%d, got=%d", want, integer.Value)
+	}
+}
+
+func TestEvalBoolean(t *testing.T) {
+	tests := []struct {
+		input string
+		want  bool
+	}{
+		{
+			input: "true",
+			want:  true,
+		},
+		{
+			input: "false",
+			want:  false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			got := eval(test.input)
+			testBoolean(t, got, test.want)
+		})
+	}
+}
+
+func testBoolean(t *testing.T, got object.Object, want bool) {
+	t.Helper()
+
+	boolean, ok := got.(*object.Boolean)
+	if !ok {
+		t.Fatalf("not Integer: %+v", got)
+	}
+
+	if boolean.Value != want {
+		t.Fatalf("integer value wrong. want=%t, got=%t", want, boolean.Value)
 	}
 }
 
