@@ -83,6 +83,8 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	switch {
 	case left.Type() == object.IntegerType && right.Type() == object.IntegerType:
 		return evalIntegerInfixExpression(operator, left, right)
+	case left.Type() == object.BooleanType && right.Type() == object.BooleanType:
+		return evalBooleanInfixExpression(operator, left, right)
 	default:
 		return NULL
 	}
@@ -112,6 +114,23 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 		return booleanObject(intLeft.Value > intRight.Value)
 	case "<":
 		return booleanObject(intLeft.Value < intRight.Value)
+	default:
+		return NULL
+	}
+}
+
+func evalBooleanInfixExpression(operator string, left, right object.Object) object.Object {
+	boolLeft, ok1 := left.(*object.Boolean)
+	boolRight, ok2 := right.(*object.Boolean)
+	if !ok1 || !ok2 {
+		return NULL
+	}
+
+	switch operator {
+	case "==":
+		return booleanObject(boolLeft == boolRight)
+	case "!=":
+		return booleanObject(boolLeft != boolRight)
 	default:
 		return NULL
 	}
