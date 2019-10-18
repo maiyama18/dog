@@ -11,6 +11,14 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
+func booleanObject(b bool) object.Object {
+	if b {
+		return TRUE
+	} else {
+		return FALSE
+	}
+}
+
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
@@ -27,11 +35,7 @@ func Eval(node ast.Node) object.Object {
 	case *ast.IntegerLiteral:
 		return object.NewInteger(node.Value)
 	case *ast.BooleanLiteral:
-		if node.Value {
-			return TRUE
-		} else {
-			return FALSE
-		}
+		return booleanObject(node.Value)
 	default:
 		return NULL
 	}
@@ -100,6 +104,14 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 		return object.NewInteger(intLeft.Value * intRight.Value)
 	case "/":
 		return object.NewInteger(intLeft.Value / intRight.Value)
+	case "==":
+		return booleanObject(intLeft.Value == intRight.Value)
+	case "!=":
+		return booleanObject(intLeft.Value != intRight.Value)
+	case ">":
+		return booleanObject(intLeft.Value > intRight.Value)
+	case "<":
+		return booleanObject(intLeft.Value < intRight.Value)
 	default:
 		return NULL
 	}

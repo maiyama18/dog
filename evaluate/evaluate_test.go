@@ -49,38 +49,22 @@ func TestEvalBoolean(t *testing.T) {
 		input string
 		want  bool
 	}{
-		{
-			input: "true",
-			want:  true,
-		},
-		{
-			input: "false",
-			want:  false,
-		},
-		{
-			input: "!true",
-			want:  false,
-		},
-		{
-			input: "!false",
-			want:  true,
-		},
-		{
-			input: "!!true",
-			want:  true,
-		},
-		{
-			input: "!!false",
-			want:  false,
-		},
-		{
-			input: "!5",
-			want:  false,
-		},
-		{
-			input: "!!5",
-			want:  true,
-		},
+		{input: "true", want: true},
+		{input: "false", want: false},
+		{input: "!true", want: false},
+		{input: "!false", want: true},
+		{input: "!!true", want: true},
+		{input: "!!false", want: false},
+		{input: "!5", want: false},
+		{input: "!!5", want: true},
+		{input: "1 == 1", want: true},
+		{input: "2 == 1", want: false},
+		{input: "1 != 1", want: false},
+		{input: "2 != 1", want: true},
+		{input: "2 > 1", want: true},
+		{input: "1 > 2", want: false},
+		{input: "2 < 1", want: false},
+		{input: "1 < 2", want: true},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
