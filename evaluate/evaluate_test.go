@@ -21,6 +21,10 @@ func TestEvalInteger(t *testing.T) {
 			input: "42",
 			want:  42,
 		},
+		{
+			input: "-42",
+			want:  -42,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
@@ -55,6 +59,30 @@ func TestEvalBoolean(t *testing.T) {
 		{
 			input: "false",
 			want:  false,
+		},
+		{
+			input: "!true",
+			want:  false,
+		},
+		{
+			input: "!false",
+			want:  true,
+		},
+		{
+			input: "!!true",
+			want:  true,
+		},
+		{
+			input: "!!false",
+			want:  false,
+		},
+		{
+			input: "!5",
+			want:  false,
+		},
+		{
+			input: "!!5",
+			want:  true,
 		},
 	}
 	for _, test := range tests {
