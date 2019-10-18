@@ -23,8 +23,12 @@ func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		return evalStatements(node.Statements)
+	case *ast.BlockStatement:
+		return evalStatements(node.Statements)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
+	case *ast.IfExpression:
+		return evalIfExpression(node)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right)
 		return evalPrefixExpression(node.Operator, right)
@@ -47,6 +51,25 @@ func evalStatements(stmts []ast.Statement) object.Object {
 		result = Eval(s)
 	}
 	return result
+}
+
+func evalIfExpression(ifExp *ast.IfExpression) object.Object {
+	cond := Eval(ifExp.Condition)
+	if truthy(cond) {
+		return Eval(ifExp.Consequence)
+	}
+
+	if ifExp.Alternative == nil {
+		return NULL
+	}
+	return Eval(ifExp.Alternative)
+}
+
+func truthy(cond object.Object) bool {
+	if cond == FALSE || cond == NULL {
+		return false
+	}
+	return true
 }
 
 func evalPrefixExpression(operator string, right object.Object) object.Object {

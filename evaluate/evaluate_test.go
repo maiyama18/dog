@@ -31,19 +31,6 @@ func TestEvalInteger(t *testing.T) {
 	}
 }
 
-func testInteger(t *testing.T, got object.Object, want int64) {
-	t.Helper()
-
-	integer, ok := got.(*object.Integer)
-	if !ok {
-		t.Fatalf("not Integer: %+v", got)
-	}
-
-	if integer.Value != want {
-		t.Fatalf("integer value wrong. want=%d, got=%d", want, integer.Value)
-	}
-}
-
 func TestEvalBoolean(t *testing.T) {
 	tests := []struct {
 		input string
@@ -78,6 +65,45 @@ func TestEvalBoolean(t *testing.T) {
 	}
 }
 
+func TestEvalIfElseExpression(t *testing.T) {
+	tests := []struct {
+		input string
+		want  interface{}
+	}{
+		{input: "if (true) { 10 }", want: 10},
+		{input: "if (false) { 10 }", want: nil},
+		{input: "if (1) { 10 }", want: 10},
+		{input: "if (1 < 2) { 10 }", want: 10},
+		{input: "if (1 > 2) { 10 }", want: nil},
+		{input: "if (1 < 2) { 10 } else { 20 }", want: 10},
+		{input: "if (1 > 2) { 10 } else { 20 }", want: 20},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			got := eval(test.input)
+			wantedInt, ok := test.want.(int)
+			if ok {
+				testInteger(t, got, int64(wantedInt))
+			} else {
+				testNull(t, got)
+			}
+		})
+	}
+}
+
+func testInteger(t *testing.T, got object.Object, want int64) {
+	t.Helper()
+
+	integer, ok := got.(*object.Integer)
+	if !ok {
+		t.Fatalf("not Integer: %+v", got)
+	}
+
+	if integer.Value != want {
+		t.Fatalf("integer value wrong. want=%d, got=%d", want, integer.Value)
+	}
+}
+
 func testBoolean(t *testing.T, got object.Object, want bool) {
 	t.Helper()
 
@@ -88,6 +114,15 @@ func testBoolean(t *testing.T, got object.Object, want bool) {
 
 	if boolean.Value != want {
 		t.Fatalf("integer value wrong. want=%t, got=%t", want, boolean.Value)
+	}
+}
+
+func testNull(t *testing.T, got object.Object) {
+	t.Helper()
+
+	_, ok := got.(*object.Null)
+	if !ok {
+		t.Fatalf("not Integer: %+v", got)
 	}
 }
 
