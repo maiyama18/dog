@@ -13,18 +13,15 @@ func TestEvalInteger(t *testing.T) {
 		input string
 		want  int64
 	}{
-		{
-			input: "5",
-			want:  5,
-		},
-		{
-			input: "42",
-			want:  42,
-		},
-		{
-			input: "-42",
-			want:  -42,
-		},
+		{input: "5", want: 5},
+		{input: "42", want: 42},
+		{input: "-42", want: -42},
+		{input: "8 + 2", want: 10},
+		{input: "8 - 2", want: 6},
+		{input: "2 - 8", want: -6},
+		{input: "8 * 2", want: 16},
+		{input: "8 / 2", want: 4},
+		{input: "-8 / 2", want: -4},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
